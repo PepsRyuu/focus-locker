@@ -8,6 +8,11 @@ function parsePackageJson() {
     return JSON.parse(fs.readFileSync("package.json", "utf8"));
 }
 
+function exec (command) {
+    console.log('EXEC: ' + command);
+    execSync(command);
+}
+
 function updateVersion () {
     var packageJson = parsePackageJson();
     var currVersion = packageJson.version.match(/\d+/g).map(function(value) {
@@ -34,9 +39,9 @@ function updateVersion () {
 
 if (isRelease > 0) {
     let version = updateVersion();
-    execSync(`git add package.json`);
-    execSync(`git add -am "Released ${version}"`);
-    execSync(`git tag "${version}" --force`);
-    execSync(`git push origin HEAD:master --tags`);
-    execSync(`npm publish`);
+    exec(`git add package.json`);
+    exec(`git commit -am "Released ${version}"`);
+    exec(`git tag "${version}" --force`);
+    exec(`git push origin HEAD:master --tags`);
+    exec(`npm publish`);
 }
