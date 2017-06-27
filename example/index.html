@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Focus Locker Demo</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app">
+        <button>Open Modal</button>
+    </div>
+    <script src="./Modal.js"></script>
+    <script src="../Focuslocker.js"></script>
+    <script>
+        var appBtn = document.querySelector('.app button');
+        var modalCount = 3;
+
+        function displayModal () {
+            var content = document.createElement('div');
+
+            for (var i = 0; i < modalCount; i++) {
+                content.innerHTML += '<input type="text">';
+            }
+
+            modalCount--;
+
+            if (modalCount > 0) {
+                content.innerHTML += '<div><button class="open">Open Modal</button></div>';
+            }
+
+            content.innerHTML += '<div><button class="close">Close Modal</button></div>';
+
+            if (modalCount > 0) {
+                content.querySelector('button.open').onclick = displayModal;
+            }
+
+            content.querySelector('button.close').onclick = function () {
+                modal.close();
+                modalCount++;
+            };
+
+
+            var modal = new Modal({
+                content: content
+            });
+        }
+
+        appBtn.addEventListener('click', displayModal);
+    </script>
+</body>
+</html>
