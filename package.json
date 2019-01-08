@@ -4,5 +4,14 @@
     "description": "Simple utility for locking focus to an element.",
     "main": "FocusLocker.js",
     "author": "Paul Sweeney",
-    "license": "MIT"
+    "license": "MIT",
+    "main": "dist/FocusLocker.umd.js",
+    "module": "dist/FocusLocker.esm.js",
+    "scripts": {
+        "compile": "rollup -c",
+        "build": "node ./build.js"
+    },
+    "devDependencies": {
+        "rollup": "^1.0.2"
+    }
 }

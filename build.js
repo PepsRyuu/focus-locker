@@ -37,6 +37,8 @@ function updateVersion () {
     return packageJson.version;
 }
 
+exec('npm run compile');
+
 if (isRelease > 0) {
     let version = updateVersion();
     exec(`git add package.json`);
