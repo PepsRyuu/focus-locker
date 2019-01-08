@@ -1,3 +1,6 @@
 .gitignore
 example
 build.js
+rollup.config.js
+*.tgz
+src
