@@ -1,11 +1,10 @@
 {
     "name": "focus-locker",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Simple utility for locking focus to an element.",
-    "main": "FocusLocker.js",
+    "main": "dist/FocusLocker.umd.js",
     "author": "Paul Sweeney",
     "license": "MIT",
-    "main": "dist/FocusLocker.umd.js",
     "module": "dist/FocusLocker.esm.js",
     "scripts": {
         "compile": "rollup -c",
