@@ -1,0 +1,19 @@
+{
+    "plugins": [
+        ["@babel/plugin-transform-react-jsx", {
+            "pragma": "h",
+            "pragmaFrag": "Fragment"
+        }]
+    ],
+    "env": {
+        "test": {
+            "presets": [
+                ["@babel/preset-env", {
+                    "targets": {
+                        "node": "current"
+                    }
+                }]
+            ]
+        }
+    }
+}

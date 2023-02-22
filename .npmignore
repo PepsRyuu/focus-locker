@@ -4,3 +4,6 @@ build.js
 rollup.config.js
 *.tgz
 src
+test
+jest.config.js
+babelrc.json
