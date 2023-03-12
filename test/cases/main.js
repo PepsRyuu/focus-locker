@@ -202,6 +202,32 @@ function ParallelTestApp() {
     )
 }
 
+function EscapeTestApp() {
+    let [open, setOpen] = useState(false);
+    let modalRef = useRef();
+
+    useEffect(() => {
+        if (open) {
+            FocusLocker.request(modalRef.current);
+            return () => FocusLocker.release();
+        }
+    }, [open]);
+
+    return (
+        <div class="TestApp">
+            <button class="open" onClick={() => setOpen(true)}>Open</button>
+            {open && (
+                <div class="Modal" ref={modalRef}>
+                    <input class="input-a" />
+                </div>
+            )}
+            <input 
+                class="escape-check" 
+            />
+        </div>
+    )
+}
+
 describe('FocusLocker', () => {
     test('should focus on first focusable item in element passed to request', () => {
         render(<BasicTestApp />);
@@ -330,4 +356,25 @@ describe('FocusLocker', () => {
         expect(document.activeElement.className).toEqual('popup-b-trigger');
     });
     
+    test('should not escape at all when redirecting focus back to start of requested element', async () => {
+        // Track focused elements.
+        let focus = window.HTMLElement.prototype.focus;
+        let trail = [];
+        window.HTMLElement.prototype.focus = function () {
+            trail.push(this);
+            focus.call(this);
+        };
+
+        render(<EscapeTestApp />);
+        let openBtn = document.querySelector('button.open');
+        openBtn.focus();
+        fireEvent.click(openBtn);
+        expect(document.activeElement.className).toEqual('input-a');
+        await tab();
+        expect(document.activeElement.className).toEqual('input-a');
+        expect(trail.find(t => t.className === 'escape-check')).toEqual(undefined);
+
+        // Restore
+        window.HTMLElement.prototype.focus = focus;
+    });
 });

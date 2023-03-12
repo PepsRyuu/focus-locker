@@ -9,13 +9,11 @@ var focus_selector = [
 ].join(',');
 
 var stack = [];
-var shiftTab = false;
 var mouseDown = false;
 
 document.addEventListener('focus', onDocumentFocus, true);
 document.addEventListener('mousedown', onDocumentMouseDown, true);
 document.addEventListener('mouseup', onDocumentMouseUp, true);
-document.addEventListener('keydown', onDocumentKeyDown, true);
 
 function onDocumentMouseDown(e) {
     mouseDown = true;
@@ -23,10 +21,6 @@ function onDocumentMouseDown(e) {
 
 function onDocumentMouseUp(e) {
     mouseDown = false;
-}
-
-function onDocumentKeyDown (e) {
-    shiftTab = (e.shiftKey && e.keyCode === 9);
 }
 
 function onDocumentFocus (e) {
@@ -38,11 +32,23 @@ function onDocumentFocus (e) {
         var element = stack[stack.length - 1].element;
         if (element !== e.target && !element.contains(e.target)) {
             e.stopPropagation();
-            if (shiftTab) {
-                (findLastFocusableElement(element) || element).focus();
-            } else {
-                (findFirstFocusableElement(element) || element).focus();
-            }
+            (findFirstFocusableElement(element) || element).focus();
+        }
+    }
+}
+
+function onElementKeyDown(e) {
+    if (e.keyCode === 9) {
+        let target = e.currentTarget;
+        let firstFocusable = findFirstFocusableElement(target) || target;
+        let lastFocusable = findLastFocusableElement(target) || target;
+
+        if (document.activeElement === lastFocusable && !e.shiftKey) {
+            e.preventDefault();
+            firstFocusable.focus();
+        } else if (document.activeElement === firstFocusable && e.shiftKey) {
+            e.preventDefault();
+            lastFocusable.focus();
         }
     }
 }
@@ -69,6 +75,8 @@ function request (element, lastFocused) {
         element: element,
         lastFocused: lastFocused || document.activeElement
     };
+
+    element.addEventListener('keydown', onElementKeyDown);
 
     stack.push(handle);
     
@@ -97,6 +105,8 @@ function release (element) {
         var index = element? stack.findIndex(h => h.element === element) : stack.length - 1;
         var handle = stack[index];
         stack.splice(index, 1);
+
+        handle.element.removeEventListener('keydown', onElementKeyDown);
 
         if (index === stackLength - 1) {
             if (handle.lastFocused.matches(focus_selector)) {

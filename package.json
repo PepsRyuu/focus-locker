@@ -10,7 +10,8 @@
         "compile": "rollup -c",
         "build": "node ./build.js",
         "test": "jest -c jest.config.js",
-        "prepublishOnly": "npm run test && npm run build"
+        "prepublishOnly": "npm run test && npm run build",
+        "example": "npm run build && npx http-server -o /example"
     },
     "devDependencies": {
         "@babel/plugin-transform-react-jsx": "^7.21.0",

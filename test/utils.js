@@ -2,25 +2,31 @@ import { fireEvent } from "@testing-library/dom";
 
 export async function tab({ shiftKey } = {}) {
     let evt = new KeyboardEvent('keydown', { 
+        bubbles: true,
         shiftKey, 
         keyCode: 9, 
         key: 'Tab' 
     });
 
-    document.dispatchEvent(evt);
+    let prevented = false;
+    evt.preventDefault = () => prevented = true;
 
-    let els = document.querySelectorAll('input,button');
-    let index = [].indexOf.call(els, document.activeElement);
+    document.activeElement.dispatchEvent(evt);
 
-    let target;
+    if (!prevented) {
+        let els = document.querySelectorAll('input,button');
+        let index = [].indexOf.call(els, document.activeElement);
 
-    if (!shiftKey) {
-        target = index === els.length - 1? els[0] : els[index + 1];
-    } else {
-        target = index === 0? els[els.length - 1] : els[index - 1];
+        let target;
+
+        if (!shiftKey) {
+            target = index === els.length - 1? els[0] : els[index + 1];
+        } else {
+            target = index === 0? els[els.length - 1] : els[index - 1];
+        }
+
+        target.focus();
     }
-
-    target.focus();
 }
 
 export async function click(target) {
