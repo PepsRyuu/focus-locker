@@ -14,7 +14,7 @@ A simple utility class that restricts focusing to the content of the element spe
 
 When the component is instantiated, use the following code to lock the focus:
 
-```FocusLocker.request(element);```
+```FocusLocker.request(element, [options]);```
 
 And when restoring focus, use the following code:
 
@@ -22,12 +22,14 @@ And when restoring focus, use the following code:
 
 ## API
 
-### FocusLocker.request(element, [returnElement])
+### FocusLocker.request(element, [options])
 
 * Allows you to lock focus into the specified element.
 * By default, when you release focus, it will return to the focused element before locking.
-* You can optionally choose which element to return to by specifying the second optional parameter.
 * You can stack the focus locks, like a dialog on top of a dialog.
+* You can optionally choose additional options in an object:
+    * `returnElement: Element` - Element to return to on release. Defaults to `document.activeElement`
+    * `preventScroll: Boolean` - When focus is triggered, prevent scrolling of the page, including on return. Defaults to `false`.
 
 ### FocusLocker.release([element])
 

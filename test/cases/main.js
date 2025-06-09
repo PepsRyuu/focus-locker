@@ -3,13 +3,13 @@ import { useEffect, useState, useRef } from 'preact/hooks';
 import FocusLocker from '../../src/main.js';
 import { tab, click, skipTick } from '../utils';
 
-function BasicTestApp() {
+function BasicTestApp({ opts }) {
     let [open, setOpen] = useState(false);
     let modalRef = useRef();
 
     useEffect(() => {
         if (open) {
-            FocusLocker.request(modalRef.current);
+            FocusLocker.request(modalRef.current, opts);
             return () => FocusLocker.release();
         }
     }, [open]);
@@ -53,7 +53,7 @@ function CustomReturnTestApp() {
     )
 }
 
-function CustomReturnWrapperTestApp() {
+function CustomReturnWrapperTestAppLegacy() {
     let [open, setOpen] = useState(false);
     let modalRef = useRef();
     let returnRef = useRef();
@@ -80,11 +80,41 @@ function CustomReturnWrapperTestApp() {
     )
 }
 
-function AutoFocusInsideTestApp({ focus }) {
+function CustomReturnWrapperTestApp({ opts }) {
+    let [open, setOpen] = useState(false);
+    let modalRef = useRef();
+    let returnRef = useRef();
+
+    useEffect(() => {
+        if (open) {
+            FocusLocker.request(modalRef.current, {
+                returnElement: returnRef.current,
+                ...opts
+            });
+            return () => FocusLocker.release();
+        }
+    }, [open]);
+
+    return (
+        <div class="TestApp">
+            <button class="open" onClick={() => setOpen(true)}>Open</button>
+            <div class="MyReturnWrapper" ref={returnRef}>
+                <button class="return-btn">ReturnBtn</button>
+            </div>
+            {open && (
+                <div class="Modal" ref={modalRef}>
+                    <button class="close" onClick={() => setOpen(false)}>Close</button>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function AutoFocusInsideTestApp({ focus, opts }) {
     let modalRef = useRef();
 
     useEffect(() => {
-        FocusLocker.request(modalRef.current);
+        FocusLocker.request(modalRef.current, opts);
         return () => FocusLocker.release();
     }, []);
 
@@ -311,6 +341,14 @@ describe('FocusLocker', () => {
         expect(document.activeElement.className).toEqual('return-btn');
     });
 
+    test('should support focusable element inside custom element to return to on request (Legacy)', async () => {
+        render(<CustomReturnWrapperTestAppLegacy />);
+        await click(document.querySelector('button.open'));
+        expect(document.activeElement.className).toEqual('close');
+        await click(document.querySelector('button.close'));
+        expect(document.activeElement.className).toEqual('return-btn');
+    });
+
     test('should support focusable element inside custom element to return to on request', async () => {
         render(<CustomReturnWrapperTestApp />);
         await click(document.querySelector('button.open'));
@@ -318,6 +356,7 @@ describe('FocusLocker', () => {
         await click(document.querySelector('button.close'));
         expect(document.activeElement.className).toEqual('return-btn');
     });
+
 
     test('should focus lock inside a focus lock and stack', async () => {
         render(<NestedTestApp />);
@@ -376,5 +415,85 @@ describe('FocusLocker', () => {
 
         // Restore
         window.HTMLElement.prototype.focus = focus;
+    });
+
+    describe('Options: preventScroll', () => {
+        beforeEach(() => {
+            jest.spyOn(HTMLElement.prototype, 'focus');
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        test('should not preventScroll by default when requesting focus lock (Legacy)', async () => {
+            render(<BasicTestApp />);
+            let openBtn = document.querySelector('button.open');
+            openBtn.focus();
+            expect(document.activeElement.className).toEqual('open');
+            fireEvent.click(openBtn);
+            expect(document.activeElement.className).toEqual('input-a');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: false });
+        });
+
+        test('should not preventScroll by default when requesting focus lock with returnElement (Legacy)', async () => {
+            render(<CustomReturnWrapperTestAppLegacy />);
+            await click(document.querySelector('button.open'));
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: false });
+        });
+            
+        test('should support preventScroll set to false explicitly', async () => {
+            render(<BasicTestApp opts={{ preventScroll: false }} />);
+            let openBtn = document.querySelector('button.open');
+            openBtn.focus();
+            expect(document.activeElement.className).toEqual('open');
+            fireEvent.click(openBtn);
+            expect(document.activeElement.className).toEqual('input-a');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: false });
+        });
+
+        test('should support preventScroll set to true explicitly', async () => {
+            render(<BasicTestApp opts={{ preventScroll: true }} />);
+            let openBtn = document.querySelector('button.open');
+            openBtn.focus();
+            expect(document.activeElement.className).toEqual('open');
+            fireEvent.click(openBtn);
+            expect(document.activeElement.className).toEqual('input-a');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: true });
+        });
+
+        test('should support preventScroll for data-autofocus-inside', () => {
+            expect(document.activeElement.tagName).toEqual('BODY');
+            render(<AutoFocusInsideTestApp opts={{ preventScroll: true }} />);
+            expect(document.activeElement.className).toEqual('input-c');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: true });
+        });
+    
+        test('should support data-autofocus', () => {
+            expect(document.activeElement.tagName).toEqual('BODY');
+            render(<AutoFocusInsideTestApp opts={{ preventScroll: true }} focus="input-d" />);
+            expect(document.activeElement.className).toEqual('input-d');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: true });
+        });
+
+        test('should support preventScroll set to false on returnElement', async () => {
+            render(<CustomReturnWrapperTestApp opts={{ preventScroll: false }} />);
+            await click(document.querySelector('button.open'));
+            expect(document.activeElement.className).toEqual('close');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: false });
+            await click(document.querySelector('button.close'));
+            expect(document.activeElement.className).toEqual('return-btn');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: false });
+        });
+
+        test('should support preventScroll set to true on returnElement', async () => {
+            render(<CustomReturnWrapperTestApp opts={{ preventScroll: true }} />);
+            await click(document.querySelector('button.open'));
+            expect(document.activeElement.className).toEqual('close');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: true });
+            await click(document.querySelector('button.close'));
+            expect(document.activeElement.className).toEqual('return-btn');
+            expect(document.activeElement.focus).toHaveBeenCalledWith({ preventScroll: true });
+        });
     });
 });

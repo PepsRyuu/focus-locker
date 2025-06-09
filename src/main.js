@@ -32,7 +32,7 @@ function onDocumentFocus (e) {
         var element = stack[stack.length - 1].element;
         if (element !== e.target && !element.contains(e.target)) {
             e.stopPropagation();
-            (findFirstFocusableElement(element) || element).focus();
+            focus(findFirstFocusableElement(element) || element);
         }
     }
 }
@@ -45,10 +45,10 @@ function onElementKeyDown(e) {
 
         if (document.activeElement === lastFocusable && !e.shiftKey) {
             e.preventDefault();
-            firstFocusable.focus();
+            focus(firstFocusable);
         } else if (document.activeElement === firstFocusable && e.shiftKey) {
             e.preventDefault();
-            lastFocusable.focus();
+            focus(lastFocusable);
         }
     }
 }
@@ -66,15 +66,26 @@ function findLastFocusableElement (parent) {
     return els? els[els.length -1] : null;
 }
 
-function request (element, lastFocused) {
+function focus(element, opts = {}) {
+    element.focus({
+        preventScroll: opts.preventScroll
+    });
+}
+
+function request (element, options = {}) {
+    let opts = options instanceof Node? {
+        returnElement: options,
+        preventScroll: false
+    } : {
+        returnElement: options.returnElement || document.activeElement,
+        preventScroll: options.preventScroll || false,
+    };
+
     if (!element) {
         throw new Error('Must pass element to focus lock into.');
     }
 
-    var handle = {
-        element: element,
-        lastFocused: lastFocused || document.activeElement
-    };
+    var handle = { element, opts };
 
     element.addEventListener('keydown', onElementKeyDown);
 
@@ -84,19 +95,19 @@ function request (element, lastFocused) {
     var autoFocusInside = element.querySelector('[data-autofocus-inside=""], [data-autofocus-inside="true"]');
 
     if (autoFocus) {
-        autoFocus.focus();
+        focus(autoFocus, opts);
         return;
     }
 
     if (autoFocusInside) {
         var found = findFirstFocusableElement(autoFocusInside);
         if (found) {
-            found.focus();
+            focus(found, opts);
             return;
         }
     }
 
-    (findFirstFocusableElement(element) || element).focus();
+    focus((findFirstFocusableElement(element) || element), opts);
 }
 
 function release (element) {
@@ -109,16 +120,18 @@ function release (element) {
         handle.element.removeEventListener('keydown', onElementKeyDown);
 
         if (index === stackLength - 1) {
-            if (handle.lastFocused.matches(focus_selector)) {
-                handle.lastFocused.focus();
+            if (handle.opts.returnElement.matches(focus_selector)) {
+                focus(handle.opts.returnElement, handle.opts);
             } else {
-                var el = handle.lastFocused.querySelector(focus_selector);
+                var el = handle.opts.returnElement.querySelector(focus_selector);
                 if (el) {
-                    el.focus();
+                    focus(el, handle.opts);
                 }
             }
         }
     }
 }
 
-export default { request, release };
+var main = { request, release };
+
+export default main;
